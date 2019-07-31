@@ -1,0 +1,9 @@
+# exclude
+.gradle
+.vscode
+bin
+build
+lib
+src/main/java/software/*
+accessKeys.csv
+
