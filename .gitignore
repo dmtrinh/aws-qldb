@@ -1,6 +1,7 @@
 # exclude
 .classpath
 .gradle
+.settings
 .vscode
 bin
 build
