@@ -27,8 +27,9 @@ for more information on getting your keys.
 * [Gradle]()
 * [Gradle Wrapper](https://docs.gradle.org/3.3/userguide/gradle_wrapper.html)
 * Run `prereqs.sh` to grab the QLDB Java libraries
+* If you are using Visual Studio Code, grab the [Java Extension Pack](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack)
 
-### Running
+## Running
 
 Windows:
 
