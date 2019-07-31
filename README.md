@@ -26,4 +26,18 @@ for more information on getting your keys.
 * [Java 8 Installation](https://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
 * [Gradle]()
 * [Gradle Wrapper](https://docs.gradle.org/3.3/userguide/gradle_wrapper.html)
-* Run prereqs.sh to grab the QLDB Java libraries
+* Run `prereqs.sh` to grab the QLDB Java libraries
+
+### Running
+
+Windows:
+
+```
+gradlew run -DsmokeTest=QLDBSmokeTest
+```
+
+Unix:
+
+```
+./gradlew run -DsmokeTest=QLDBSmokeTest
+```
