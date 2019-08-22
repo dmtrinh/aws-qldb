@@ -15,7 +15,7 @@ to connect to AWS. You can do this by creating a file named "config" at `~/.aws/
     aws_secret_access_key = <your secret key>
     region = us-east-1 <or other region>
 
-Alternatively, us the [AWS CLI](https://aws.amazon.com/cli/) and run `aws configure` to 
+Alternatively, use the [AWS CLI](https://aws.amazon.com/cli/) and run `aws configure` to 
 step through a setup wizard for the config file.
 
 See the [Security Credentials](http://aws.amazon.com/security-credentials) page
