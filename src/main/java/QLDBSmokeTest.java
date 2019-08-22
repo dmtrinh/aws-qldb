@@ -7,24 +7,38 @@ import com.amazonaws.services.qldb.model.LedgerState;
 import com.amazonaws.services.qldb.model.DescribeLedgerRequest;
 import com.amazonaws.services.qldb.model.DescribeLedgerResult;
 import static com.amazonaws.services.qldb.model.PermissionsMode.ALLOW_ALL;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import com.amazon.ion.IonReader;
+import com.amazon.ion.IonValue;
+import com.amazon.ion.system.IonReaderBuilder;
 import com.amazon.qldb.QldbClientException;
 import com.amazon.qldb.QldbSession;
+import com.amazon.qldb.transaction.TransactionExecutor;
+import com.amazon.qldb.transaction.result.Result;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.qldbsessionv1.AmazonQLDBSessionV1ClientBuilder;
+import com.fasterxml.jackson.dataformat.ion.IonObjectMapper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 /**
  * Smoke test QLDB:
- *   - Create ledger
- *   - Connect to ledger
- *   - Create table
- *   - Insert a record
- *   - Update a record
- *   - Verify a record
+ *   + Create a ledger
+ *   + Connect to the ledger
+ *   + Create some tables
+ *   - Insert some data
+ *   - Update some data
+ *   - Retrieve modification history
+ *   - Verify document revision has is valid
  */
 public class QLDBSmokeTest {
 
@@ -99,7 +113,42 @@ public class QLDBSmokeTest {
                 .build();
     }
 
+    public static int createTable(TransactionExecutor txn, String tableName) {
+        log.info("Creating the '{}' table...", tableName);
+        final String createTable = String.format("CREATE TABLE %s", tableName);
+        try (Result result = txn.execute(createTable)) {
+            log.info("{} table created successfully.", tableName);
+            return toIonValues(result).size();
+        }
+    }
 
+    /**
+     * Convert the result set into a list of IonValues.
+     */
+    public static List<IonValue> toIonValues(Result result) {
+        final List<IonValue> valueList = new ArrayList<>();
+        result.iterator().forEachRemaining(valueList::add);
+        return valueList;
+    }
+
+    public static String getDocumentId(TransactionExecutor txn, String tableName, String identifier, String value) {
+        try {
+            final List<IonValue> parameters = Collections.singletonList((new IonObjectMapper()).writeValueAsIonValue(value));
+            final String query = String.format("SELECT metadata.id FROM _ql_committed_%s AS p WHERE p.data.%s = ?", tableName, identifier);
+            try (Result result = txn.execute(query, parameters)) {
+                if (result.isEmpty()) {
+                    throw new RuntimeException("Unable to retrieve document ID using " + value);
+                }
+                final IonReader reader = IonReaderBuilder.standard().build(result.iterator().next());
+                reader.next();
+                reader.stepIn();
+                reader.next();
+                return reader.stringValue();
+            }
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
     public static void main(String... args) {
         try {
             create(LEDGER_NAME);
@@ -107,14 +156,21 @@ public class QLDBSmokeTest {
 
         } catch (Exception e) {
             log.error("Unable to create the ledger!", e);
-//            throw e;
         }
         
-
         try {
             session = createQldbSession();
         } catch (QldbClientException e) {
             log.error("Unable to create session.", e);
+        }
+
+        try {
+            session.execute(txn -> {
+                createTable(txn, "Person");
+                createTable(txn, "Organization");
+            }, r -> log.info("Tables created successfully!"));
+        } catch (Exception e) {
+            log.error("Errors creating tables.", e);
         }
     }
 
